@@ -1,0 +1,19 @@
+{
+    "name": "com.beio.SecurityValue",
+    "version": "1.0.0",
+    "displayName": "Variable is memory Security",
+    "description": "",
+    "unity": "2019.1",
+    "unityRelease": "0b5",
+    "documentationUrl": "https://github.com/",
+    "changelogUrl": "https://github.com/changelog.html",
+    "licensesUrl": "https://github.com/licensing.html",
+    "keywords": [
+        "Security",
+        "Variable"
+    ],
+    "author": {
+        "name": "Seungjun Oh",
+        "email": "beio1541@gmail.com"
+    }
+}
