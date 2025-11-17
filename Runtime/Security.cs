@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace beio.Security
@@ -7,57 +7,39 @@ namespace beio.Security
     {
         private const int key_Size = 16;
         private const string baseKey = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789";
-        private char[] SecureKey = new char[key_Size];
-        public static string MakeSecureKey()
+        public static char[] MakeSecureKey()
         {
+            char[] SecureKey = new char[key_Size];
             for (int i = 0; i < key_Size; ++i)
                 SecureKey[i] = baseKey[UnityEngine.Random.Range(0, baseKey.Length - 1)];
-            return new string(SecureKey);
+            return SecureKey;
         }
-        public static string Encrypt(string textToEncrypt, string key)
+        public static string Encrypt(string textToEncrypt, char[] SecureKey)
         {
             byte[] plainText = Encrypt(System.Text.Encoding.UTF8.GetBytes(textToEncrypt), key);
             return System.Text.Encoding.UTF8.GetString(plainText);
         }
-        public static byte[] Encrypt(byte[] Encrypt, string key)
+        private static byte[] Encrypt(byte[] Encrypt, char[] SecureKey)
         {
-            string KeyString = ConvertKey(key);
-            rijndaelCipher.Key = System.Text.Encoding.Default.GetBytes(KeyString);
-            rijndaelCipher.IV = System.Text.Encoding.Default.GetBytes(KeyString);
+            rijndaelCipher.Key = SecureKey;
+            rijndaelCipher.IV = SecureKey;
             System.Security.Cryptography.ICryptoTransform transform = rijndaelCipher.CreateEncryptor();
-            string Base64 = Convert.ToBase64String(transform.TransformFinalBlock(Encrypt, 0, Encrypt.Length));
-            return System.Text.Encoding.UTF8.GetBytes(Base64);
+            return Convert.ToBase64String(transform.TransformFinalBlock(Encrypt, 0, Encrypt.Length));
         }
-        public static string Decrypt(string textToDecrypt, string key)
+        public static string Decrypt(string textToDecrypt, char[] SecureKey)
         {
-            byte[] plainText = Decrypt(System.Text.Encoding.UTF8.GetBytes(textToDecrypt), key);
+            byte[] plainText = Decrypt(System.Text.Encoding.UTF8.GetBytes(textToDecrypt), SecureKey);
             return System.Text.Encoding.UTF8.GetString(plainText);
         }
-        public static byte[] Decrypt(byte[] Decrypt, string key)
+        private static byte[] Decrypt(byte[] Decrypt, char[] SecureKey)
         {
-            Decrypt = Base64Check(Decrypt);
-            Decrypt = Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(Decrypt));
-            string KeyString = ConvertKey(key);
-            rijndaelCipher.Key = System.Text.Encoding.Default.GetBytes(KeyString);
-            rijndaelCipher.IV = System.Text.Encoding.Default.GetBytes(KeyString);
+            Decrypt = Convert.FromBase64String(Decrypt);
+            rijndaelCipher.Key = SecureKey;
+            rijndaelCipher.IV = SecureKey;
             return rijndaelCipher.CreateDecryptor(rijndaelCipher.Key, rijndaelCipher.IV).TransformFinalBlock(Decrypt, 0, Decrypt.Length);
         }
-        public static string Base64Check(string input)
-        {
-            return System.Text.Encoding.UTF8.GetString(Base64Check(System.Text.Encoding.UTF8.GetBytes(input)));
-        }
-        public static byte[] Base64Check(byte[] input)
-        {
-            List<byte> data = new List<byte>(input);
-            data = data.FindAll(s => s < 128);
-            return data.ToArray();
-        }
+
         #region private
-        private static string ConvertKey(string iv)
-        {
-            if (key_Size < iv.Length) iv = iv.Substring(0, key_Size);
-            return iv;
-        }
 
         private static System.Security.Cryptography.RijndaelManaged rijndaelCipher = new System.Security.Cryptography.RijndaelManaged
         {
