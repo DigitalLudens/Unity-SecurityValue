@@ -7,12 +7,12 @@ namespace beio.Security
     {
         private const int key_Size = 16;
         private const string baseKey = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789";
+        private char[] SecureKey = new char[key_Size];
         public static string MakeSecureKey()
         {
-            List<char> MakeKey = new List<char>();
             for (int i = 0; i < key_Size; ++i)
-                MakeKey.Add(baseKey[UnityEngine.Random.Range(0, baseKey.Length - 1)]);
-            return new string(MakeKey.ToArray());
+                SecureKey[i] = baseKey[UnityEngine.Random.Range(0, baseKey.Length - 1)];
+            return new string(SecureKey);
         }
         public static string Encrypt(string textToEncrypt, string key)
         {
