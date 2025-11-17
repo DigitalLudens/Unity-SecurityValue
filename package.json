@@ -1,6 +1,6 @@
 {
     "name": "com.beio.securityvalue",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "displayName": "Security Variable",
     "description": "Variable is memory Security",
     "unity": "2019.1",
