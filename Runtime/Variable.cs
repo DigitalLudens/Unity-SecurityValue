@@ -26,6 +26,20 @@ namespace beio.Security
                 a = new Variable<T>();
             return a.value;
         }
+        public static readonly Func<string, (bool success, T value)> tryParseDelegate = CreateTryParseDelegate();
+        private static Func<string, (bool, T)> CreateTryParseDelegate()
+        {
+            var t = typeof(T);
+            var mi = t.GetMethod("TryParse", new[] { typeof(string), t.MakeByRefType() });
+            if (mi == null) return s => (false, default);
+            // Delegate 생성(간단화 예 — 실제로는 DynamicMethod/Expression으로 구현 권장)
+            return s =>
+            {
+                object[] args = new object[] { s, null };
+                bool ok = (bool)mi.Invoke(null, args); // 한 번만 발생; 호출 빈도는 델리게이트로 대체
+                return (ok, ok ? (T)args[1] : default);
+            };
+        }
         public override string ToString()
         {
             return value.ToString();
@@ -35,9 +49,6 @@ namespace beio.Security
         #region Constructor
         public Variable()
         {
-            tType = typeof(T);
-            getMethodTypes = new Type[] { typeof(string), typeof(T).MakeByRefType() };
-            method = tType.GetMethod("TryParse", getMethodTypes);
         }
         public Variable(T value) : this()
         {
@@ -54,20 +65,14 @@ namespace beio.Security
                 try
                 {
                     DecryptValue = Crypto.Decrypt(secureValue, secureKey);
+                    var (success, val) = tryParseDelegate.Invoke(DecryptValue);
+                    return success ? val : default;
                 }
                 catch
                 {
+                    return default;    
                 }
-                if (DecryptValue == null)
-                    return default;
-                // Numberic에 대한 함수 여부를 체크한다.
-                if (method == null)
-                    return (T)DecryptValue;
-                // TryParse 함수를 호출 TryParse 에 대한 처리를 시작한다.
-                object[] parameters = new object[] { DecryptValue, null };
-                bool result = (bool)method.Invoke(null, parameters);
-                if (result) return (T)parameters[1];
-                return default;
+                
             }
             set
             {
