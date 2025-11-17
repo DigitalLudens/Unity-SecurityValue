@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 
 
@@ -7,7 +7,7 @@ namespace beio.Security
     public class Variable<T>
     {
         #region Private Member
-        private string secureKey;
+        private char[] secureKey;
         private string secureValue = string.Empty;
         private Type[] getMethodTypes;
         private Type tType;
@@ -32,11 +32,10 @@ namespace beio.Security
             var t = typeof(T);
             var mi = t.GetMethod("TryParse", new[] { typeof(string), t.MakeByRefType() });
             if (mi == null) return s => (false, default);
-            // Delegate 생성(간단화 예 — 실제로는 DynamicMethod/Expression으로 구현 권장)
             return s =>
             {
                 object[] args = new object[] { s, null };
-                bool ok = (bool)mi.Invoke(null, args); // 한 번만 발생; 호출 빈도는 델리게이트로 대체
+                bool ok = (bool)mi.Invoke(null, args); 
                 return (ok, ok ? (T)args[1] : default);
             };
         }
