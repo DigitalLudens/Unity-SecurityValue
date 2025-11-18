@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 
 
 namespace beio.Security
@@ -7,11 +6,8 @@ namespace beio.Security
     public class Variable<T>
     {
         #region Private Member
-        private char[] secureKey;
-        private string secureValue = string.Empty;
-        private Type[] getMethodTypes;
-        private Type tType;
-        private MethodInfo method;
+        private byte[] secureKey;
+        private byte[] secureValue;
 
         #endregion
         #region Static Method
@@ -26,18 +22,30 @@ namespace beio.Security
                 a = new Variable<T>();
             return a.value;
         }
-        public static readonly Func<string, (bool success, T value)> tryParseDelegate = CreateTryParseDelegate();
-        private static Func<string, (bool, T)> CreateTryParseDelegate()
+        private delegate bool TryParseFunc(string s, out T value);
+        private static readonly TryParseFunc tryParseFunc = CreateTryParseFunc();
+        private static TryParseFunc CreateTryParseFunc()
         {
             var t = typeof(T);
+            if (t == typeof(string))
+                return (string s, out T v) =>
+                {
+                    v = (T)(object)s;
+                    return true;
+                };
+
             var mi = t.GetMethod("TryParse", new[] { typeof(string), t.MakeByRefType() });
-            if (mi == null) return s => (false, default);
-            return s =>
+            if (mi == null) return null;
+
+            try
             {
-                object[] args = new object[] { s, null };
-                bool ok = (bool)mi.Invoke(null, args); 
-                return (ok, ok ? (T)args[1] : default);
-            };
+                return (TryParseFunc)Delegate.CreateDelegate(typeof(TryParseFunc), mi);
+                //return Delegate.CreateDelegate(typeof(TryParseFunc), mi) as TryParseFunc;
+            }
+            catch
+            {
+                return null;
+            }
         }
         public override string ToString()
         {
@@ -59,13 +67,15 @@ namespace beio.Security
         {
             get
             {
+                if(secureKey == null || secureValue == null)
+                    return default;
                 // 암호화 해제한 값
-                object DecryptValue = null;
                 try
                 {
-                    DecryptValue = Crypto.Decrypt(secureValue, secureKey);
-                    var (success, val) = tryParseDelegate.Invoke(DecryptValue);
-                    return success ? val : default;
+                    string DecryptValue = Crypto.Decrypt(secureValue, secureKey);
+                    if (tryParseFunc != null && tryParseFunc(DecryptValue, out var parsed))
+                        return parsed;
+                    return default;
                 }
                 catch
                 {
